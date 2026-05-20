@@ -1,17 +1,50 @@
 import { useState } from 'react';
 import { shopifyThemeStructure, ShopifyThemeFile } from '../data/shopifyThemeData';
-import { Library, Folder, FileCode, Check, Copy, Search, HelpCircle, Layers, CheckCircle2 } from 'lucide-react';
+import { Library, Folder, FileCode, Check, Copy, Search, HelpCircle, Layers, CheckCircle2, Download } from 'lucide-react';
+import JSZip from 'jszip';
 
 export default function ShopifyThemeHub() {
   const [selectedFile, setSelectedFile] = useState<ShopifyThemeFile>(shopifyThemeStructure[1]); // Default to index.json
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'layout' | 'templates' | 'sections' | 'snippets' | 'config'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'layout' | 'templates' | 'sections' | 'snippets' | 'config' | 'assets'>('all');
+  const [downloadingZip, setDownloadingZip] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(selectedFile.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadZip = async () => {
+    setDownloadingZip(true);
+    try {
+      const zip = new JSZip();
+      
+      // Populate standard Shopify OS 2.0 folders inside raw ZIP root
+      shopifyThemeStructure.forEach(file => {
+        zip.file(file.path, file.code);
+      });
+      
+      // Compile ZIP in-memory
+      const content = await zip.generateAsync({ type: 'blob' });
+      
+      // Auto-trigger client-side browser download
+      const url = window.URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'modmingle-lazy-girl-shampoo-theme.zip';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean references
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to bundle theme ZIP:', e);
+    } finally {
+      setDownloadingZip(false);
+    }
   };
 
   const filteredFiles = shopifyThemeStructure.filter(file => {
@@ -31,9 +64,28 @@ export default function ShopifyThemeHub() {
             <Library size={12} /> Theme Dev Guide
           </div>
           <h2 className="text-2xl font-black font-bricolage tracking-tight">Dawn Customizations</h2>
-          <p className="text-xs text-neutral-400 mt-1 leading-snug">
+          <p className="text-xs text-neutral-400 mt-1 leading-snug mb-4">
             ModMingle OS 2.0 implementation structure based on Shopify Dawn architecture.
           </p>
+
+          {/* Quick-depoyment ZIP download button */}
+          <button
+            onClick={handleDownloadZip}
+            disabled={downloadingZip}
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-pink-500 to-[#FF0050] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg hover:shadow-pink-500/20 transition-all flex items-center justify-center gap-2 border border-pink-400/20 cursor-pointer"
+          >
+            {downloadingZip ? (
+              <>
+                <div className="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></div>
+                <span>Packaging Theme...</span>
+              </>
+            ) : (
+              <>
+                <Download size={14} />
+                <span>Download Shopify Theme ZIP</span>
+              </>
+            )}
+          </button>
         </div>
 
         {/* Search */}
@@ -50,7 +102,7 @@ export default function ShopifyThemeHub() {
 
         {/* Tab filters */}
         <div className="grid grid-cols-3 gap-1.5 mb-6 text-[10px] font-black uppercase text-center">
-          {(['all', 'layout', 'templates', 'sections', 'snippets', 'config'] as const).map(tab => (
+          {(['all', 'layout', 'templates', 'sections', 'snippets', 'config', 'assets'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

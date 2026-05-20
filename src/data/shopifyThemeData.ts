@@ -297,15 +297,19 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       {%- for block in section.blocks -%}
-        <div class="relative aspect-[9/16] rounded-3xl overflow-hidden border-2 border-white shadow-lg group">
-          <img src="{{ block.settings.thumbnail_image | image_url: width: 400 }}" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="TikTok thumbnail">
+        <div class="relative aspect-[9/16] rounded-3xl overflow-hidden border-2 border-white shadow-lg group" {{ block.shopify_attributes }}>
+          {%- if block.settings.thumbnail_image != blank -%}
+            <img src="{{ block.settings.thumbnail_image | img_url: '400x' }}" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="TikTok thumbnail">
+          {%- else -%}
+            <img src="https://picsum.photos/seed/tiktok-{{ block.id }}/600/800" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="TikTok placeholder">
+          {%- endif -%}
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
           
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-4 z-20">
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-4 z-20">
             <!-- TikTok UI emulation overlay -->
             <div class="absolute right-3 top-[30%] flex flex-col items-center gap-4 text-white text-center">
               <div class="w-8 h-8 rounded-full border border-white overflow-hidden bg-neutral-200">
-                <img src="https://i.pravatar.cc/100?u={{ block.id }}" class="w-full h-full object-cover">
+                <img src="https://i.pravatar.cc/100?u={{ block.id }}" class="w-full h-full object-cover" alt="User avatar">
               </div>
               <div class="flex flex-col items-center mt-2">
                 <span class="text-pink-hot">❤️</span>
@@ -315,8 +319,8 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
           </div>
 
           <div class="absolute bottom-4 left-4 right-12 text-white z-10">
-            <p class="font-bold text-sm mb-1">@{{ block.settings.username }}</p>
-            <p class="text-xs opacity-90 leading-snug">{{ block.settings.review_quote }}</p>
+            <p class="font-bold text-sm mb-1 truncate">@{{ block.settings.username }}</p>
+            <p class="text-xs opacity-90 leading-snug line-clamp-3">{{ block.settings.review_quote }}</p>
           </div>
         </div>
       {%- endfor -%}
@@ -327,6 +331,7 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
 {% schema %}
 {
   "name": "TikTok UGC Grid",
+  "max_blocks": 4,
   "settings": [
     {
       "type": "text",
@@ -356,7 +361,6 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
     {
       "type": "video_card",
       "name": "UGC Video Card",
-      "limit": 4,
       "settings": [
         {
           "type": "image_picker",
@@ -376,7 +380,7 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
           "default": "12.5k"
         },
         {
-          "type": "inline_richtext",
+          "type": "text",
           "id": "review_quote",
           "label": "Review Quote",
           "default": "Literally saved my 3rd day hair in seconds! No whitecast at all."
@@ -400,7 +404,7 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
   <div class="max-w-3xl mx-auto">
     <div class="text-center mb-12">
       <h2 class="text-4xl font-extrabold font-heading">{{ section.settings.heading }}</h2>
-      <p className="text-neutral-500 mt-2">{{ section.settings.subheading }}</p>
+      <p class="text-neutral-500 mt-2">{{ section.settings.subheading }}</p>
     </div>
 
     <div class="faq-list space-y-4">
@@ -563,11 +567,16 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
     path: 'snippets/sticky-cart-button.liquid',
     category: 'snippets',
     description: 'Floating add-to-cart layout configured to detect scrolls on mobile platforms and slide upwards globally when buying options disappear from view.',
-    code: `<div id="sticky-shampoo-cart" class="sticky-cart-container hidden lg:flex justify-between items-center bg-white border-t-2 border-black p-4 fixed bottom-0 left-0 right-0 z-[100] transition-transform duration-300 translate-y-full">
+    code: `{%- if product != blank -%}
+<div id="sticky-shampoo-cart" class="sticky-cart-container hidden lg:flex justify-between items-center bg-white border-t-2 border-black p-4 fixed bottom-0 left-0 right-0 z-[100] transition-transform duration-300">
   <div class="flex items-center gap-4 max-w-7xl mx-auto w-full justify-between">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 bg-[#FF7EB9]/30 rounded-lg overflow-hidden">
-        <img src="{{ product.featured_image | image_url: width: 100 }}" class="w-full h-full object-cover">
+        {%- if product.featured_image != blank -%}
+          <img src="{{ product.featured_image | img_url: '100x' }}" class="w-full h-full object-cover" alt="{{ product.title | escape }}">
+        {%- else -%}
+          <div class="w-full h-full bg-neutral-200"></div>
+        {%- endif -%}
       </div>
       <div>
         <p class="font-extrabold uppercase text-sm font-heading">{{ product.title }}</p>
@@ -576,7 +585,7 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
     </div>
 
     <div class="flex items-center gap-4">
-      <button onclick="document.querySelector('form[action=\\'/cart/add\\']').submit()" class="glossy-button-sticky px-8 py-3 rounded-full text-white font-extrabold uppercase text-sm tracking-wider">
+      <button id="sticky-cart-submit-btn" class="glossy-button-sticky px-8 py-3 rounded-full text-white font-extrabold uppercase text-sm tracking-wider">
         Instant Rescue ({{ product.price | money }})
       </button>
     </div>
@@ -584,6 +593,9 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
 </div>
 
 <style>
+  .sticky-cart-container {
+    transform: translateY(100%);
+  }
   .glossy-button-sticky {
     background: linear-gradient(135deg, #FF7EB9 0%, #FF0050 100%);
     box-shadow: 0 4px 15px rgba(255, 0, 80, 0.3);
@@ -596,23 +608,30 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
 </style>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const trigger = document.querySelector('[name="add"]');
+  document.addEventListener('DOMContentLoaded', () => {
+    const nativeBtn = document.querySelector('[name="add"]');
     const stickyCart = document.getElementById('sticky-shampoo-cart');
-    if (!trigger || !stickyCart) return;
+    if (!nativeBtn || !stickyCart) return;
 
-    window.addEventListener('scroll', function() {
-      const triggerPos = trigger.getBoundingClientRect().bottom;
-      if (triggerPos < 0) {
-        stickyCart.classList.add('active');
-        stickyCart.classList.remove('translate-y-full');
-      } else {
-        stickyCart.classList.remove('active');
-        stickyCart.classList.add('translate-y-full');
-      }
-    });
+    // 使用 Intersection Observer 替代 scroll 事件
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        stickyCart.classList.toggle('active', !entry.isIntersecting);
+      });
+    }, { threshold: 0 });
+    observer.observe(nativeBtn);
+
+    // 提交时触发原生按钮的点击（保留变体逻辑）
+    const stickyBtn = document.getElementById('sticky-cart-submit-btn');
+    if (stickyBtn) {
+      stickyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        nativeBtn.click();
+      });
+    }
   });
-</script>`
+</script>
+{%- endif -%}`
   },
   {
     path: 'config/settings_schema.json',
@@ -653,5 +672,63 @@ export const shopifyThemeStructure: ShopifyThemeFile[] = [
     ]
   }
 ]`
+  },
+  {
+    path: 'config/settings_data.json',
+    category: 'config',
+    description: 'Initial JSON content values and section parameters. Auto-populates standard configurations when the theme is first uploaded or assigned.',
+    code: `{
+  "current": {
+    "sections": {
+      "announcement_bar": {
+        "type": "announcement-bar",
+        "settings": {
+          "marquee_text": "🚨 ULTRA FINE MIST • ZERO WHITE CAST • LAZY GIRL CONFIDENCE RESET 🚨",
+          "text_speed": 15
+        }
+      }
+    }
+  }
+}`
+  },
+  {
+    path: 'assets/global.js',
+    category: 'assets',
+    description: 'Standard global assets handler for custom UI/UX interactions, TikTok emulation behaviors, and scroll transitions.',
+    code: `// ModMingle Dawn Customizations Active
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('ModMingle Shopify Theme loaded successfully!');
+});`
+  },
+  {
+    path: 'assets/section-announcement-bar.css',
+    category: 'assets',
+    description: 'Ticker layout container and infinite loop scrolling transitions CSS styles for the OS 2.0 marquee bar.',
+    code: `/* Announcement Bar Scrolling Marquee Styles */
+.announcement-marquee {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee_scroll linear infinite;
+}
+.marquee-content {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  color: #000;
+}
+@keyframes marquee_scroll {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-33.33%); }
+}`
   }
 ];
